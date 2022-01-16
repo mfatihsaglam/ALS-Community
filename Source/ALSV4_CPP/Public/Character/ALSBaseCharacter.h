@@ -384,17 +384,20 @@ protected:
 	void ForceUpdateCharacterState();
 
 	/** Input */
-
+	UFUNCTION(BlueprintCallable)
 	void PlayerForwardMovementInput(float Value);
 
+	UFUNCTION(BlueprintCallable)
 	void PlayerRightMovementInput(float Value);
 
 	void PlayerCameraUpInput(float Value);
 
 	void PlayerCameraRightInput(float Value);
 
+	UFUNCTION(BlueprintCallable)
 	void JumpPressedAction();
 
+	UFUNCTION(BlueprintCallable)
 	void JumpReleasedAction();
 
 	void SprintPressedAction();
