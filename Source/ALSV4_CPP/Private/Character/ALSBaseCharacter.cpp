@@ -48,12 +48,15 @@ void AALSBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	//PlayerInputComponent->BindAxis("MoveForward/Backwards", this, &AALSBaseCharacter::PlayerForwardMovementInput);
-	//PlayerInputComponent->BindAxis("MoveRight/Left", this, &AALSBaseCharacter::PlayerRightMovementInput);
+	// Give other component a chance to handle extra input, like debug component
+	OnSetupPlayerInputComponent.Broadcast();
+
+	PlayerInputComponent->BindAxis("MoveForward/Backwards", this, &AALSBaseCharacter::PlayerForwardMovementInput);
+	PlayerInputComponent->BindAxis("MoveRight/Left", this, &AALSBaseCharacter::PlayerRightMovementInput);
 	PlayerInputComponent->BindAxis("LookUp/Down", this, &AALSBaseCharacter::PlayerCameraUpInput);
 	PlayerInputComponent->BindAxis("LookLeft/Right", this, &AALSBaseCharacter::PlayerCameraRightInput);
-	//PlayerInputComponent->BindAction("JumpAction", IE_Pressed, this, &AALSBaseCharacter::JumpPressedAction);
-	//PlayerInputComponent->BindAction("JumpAction", IE_Released, this, &AALSBaseCharacter::JumpReleasedAction);
+	PlayerInputComponent->BindAction("JumpAction", IE_Pressed, this, &AALSBaseCharacter::JumpPressedAction);
+	PlayerInputComponent->BindAction("JumpAction", IE_Released, this, &AALSBaseCharacter::JumpReleasedAction);
 	PlayerInputComponent->BindAction("StanceAction", IE_Pressed, this, &AALSBaseCharacter::StancePressedAction);
 	PlayerInputComponent->BindAction("WalkAction", IE_Pressed, this, &AALSBaseCharacter::WalkPressedAction);
 	PlayerInputComponent->BindAction("RagdollAction", IE_Pressed, this, &AALSBaseCharacter::RagdollPressedAction);
@@ -1461,6 +1464,22 @@ void AALSBaseCharacter::CameraReleasedAction()
 	}
 }
 
+void AALSBaseCharacter::SwitchCameraPositionAction()
+{
+	if (ViewMode == EALSViewMode::FirstPerson)
+	{
+		// Don't swap shoulders on first person mode
+		return;
+	}
+	
+	SetRightShoulder(!bRightShoulder);
+}
+
+void AALSBaseCharacter::SwitchCameraModeAction()
+{
+	OnSwitchCameraMode();
+}
+
 void AALSBaseCharacter::OnSwitchCameraMode()
 {
 	// Switch camera mode
@@ -1473,7 +1492,6 @@ void AALSBaseCharacter::OnSwitchCameraMode()
 		SetViewMode(EALSViewMode::FirstPerson);
 	}
 }
-
 
 void AALSBaseCharacter::StancePressedAction()
 {
@@ -1493,16 +1511,7 @@ void AALSBaseCharacter::StancePressedAction()
 	if (LastStanceInputTime - PrevStanceInputTime <= RollDoubleTapTimeout)
 	{
 		// Roll
-		Replicated_PlayMontage(GetRollAnimation(), 1.15f);
-
-		if (Stance == EALSStance::Standing)
-		{
-			SetDesiredStance(EALSStance::Crouching);
-		}
-		else if (Stance == EALSStance::Crouching)
-		{
-			SetDesiredStance(EALSStance::Standing);
-		}
+		RollPressedAction();
 		return;
 	}
 
@@ -1521,6 +1530,20 @@ void AALSBaseCharacter::StancePressedAction()
 	}
 
 	// Notice: MovementState == EALSMovementState::InAir case is removed
+}
+
+void AALSBaseCharacter::RollPressedAction()
+{
+	Replicated_PlayMontage(GetRollAnimation(), 1.15f);
+
+	if (Stance == EALSStance::Standing)
+	{
+		SetDesiredStance(EALSStance::Crouching);
+	}
+	else if (Stance == EALSStance::Crouching)
+	{
+		SetDesiredStance(EALSStance::Standing);
+	}
 }
 
 void AALSBaseCharacter::WalkPressedAction()
